@@ -1,0 +1,83 @@
+---
+title: "The effect of transmission type on MPG"
+author: "Mike Taylor"
+date: "3 August 2015"
+output: pdf_document
+---
+
+##Executive summary
+The article below looks at the difference in mpg from cars with manual vs automatic transmission. It has been found that on average vehicles with manual transmissions have higher mpg than those with automatic transmissions.
+
+
+##Exploratory analysis
+First of all I am going to do is compare mpg for automatic and manuak transmissions using a boxplot. As can be seen below on average manual transmissions have a higher mpg compared to automatics. However, there is a lot of overlap between the two types.
+
+```{r firstGraph, echo = FALSE}
+
+data(mtcars)
+
+
+mtcars$am <- as.factor(mtcars$am)
+levels(mtcars$am) <- c("Auto", "Manual")
+
+mtcars$cyl2 <- paste(mtcars$cyl, "Cylinders")
+
+library(ggplot2)
+
+ggplot(data = mtcars, aes(y = mpg, x = am, fill = am)) + 
+  geom_boxplot(colour = "black") + 
+  #facet_grid(. ~ cyl2) + 
+  #stat_summary(fun.y = "mean", geom = "point") + 
+  ggtitle("MPG by transmission type") + 
+  xlab("Transmission type") + 
+  ylab("Miles per gallon") + 
+  theme(legend.position = "none")
+
+```
+
+
+Manual and automatic vehicles differ in other important ways as well. For example, automatics tend to be heavier which may explain a large part of why they tend to have lower mpg. The chart below demonstrates this. It also appears that the relationship between weight and mpg changes depending on the transmission type, as demonstrated by the linear regression lines.
+```{r secondGraph, echo = FALSE}
+ggplot(data = mtcars, aes(y = mpg, x = wt, colour = am)) + 
+  geom_point(size = 3) + 
+  geom_smooth(method = "lm", fill = NA)
+
+
+```
+
+
+
+##Modelling
+Firstly I am just looking at the model predicting mpg with the transmission variable. 
+```{r firstModel}
+amModel <- lm(mpg ~ am, data = mtcars)
+
+summary(amModel)
+```
+This suggests that on average a car with a manual transmission will get just over 7 more miles per gallon than an automatic (keeping all other variables constant). However, this ignores any potential confounders, for example weight which has a clear effect as seen in the earlier graph.
+
+The second model includes weight, transmission, the quarter mile time and the interaction between weight and transmission. These variables were selected because they are all significant, and no other variables are significant when added to this model.
+```{R secondModel}
+
+model2 <- lm(mpg ~ wt * am + qsec, data = mtcars)
+
+summary(model2)
+
+```
+The parameters show that having a manual transmission adds 14 mpg on average compared to an automatic transmission (keeping all other variables constant). However, the effect of weight is greater in manual vehicles. This is shown by the interaction term. For manual vehicles, adding an extra 1000lbs of weight reduces the mpg by an additional ~4 mpg compared to automatics. For automatics an extra 1000lbs reduces mpg by ~3, whereas for manuals an extra 1000lbs reduces mpg by ~7.
+
+
+\newpage
+
+##Residual diagnostics
+Plotting the residuals for the second model suggests that the fit is reasonably good. there does not appear to be any pattern or systematic variation in the residuals.
+
+```{r residuals, echo = FALSE}
+
+par(mfrow = c(2, 2))
+plot(model2)
+
+
+```
+
+
